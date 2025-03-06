@@ -37,9 +37,8 @@ impl Config {
 
     pub fn prompt() -> Result<Self> {
         println!(
-            "{}\n{}",
-            "Hello! :) Let's set up your Jira CLI configuration.".green(),
-            "Enter Jira URL:"
+            "{}\nEnter Jira URL:",
+            "Hello! :) Let's set up your Jira CLI configuration.".green()
         );
 
         let mut jira_url = String::new();

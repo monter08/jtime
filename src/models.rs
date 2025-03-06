@@ -42,7 +42,7 @@ impl Iterator for DateRangeIter {
             None
         } else {
             let date = self.current;
-            self.current = self.current + chrono::Duration::days(1);
+            self.current += chrono::Duration::days(1);
             Some(date)
         }
     }

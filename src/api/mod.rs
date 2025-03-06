@@ -1,2 +1,2 @@
-pub mod client;
-pub use client::API;
+pub mod jira;
+pub use jira::Jira;

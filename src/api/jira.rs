@@ -4,16 +4,16 @@ use chrono::{NaiveDate, TimeZone, Utc};
 use reqwest::blocking::Client;
 use serde_json::Value;
 
-pub struct API {
+pub struct Jira {
     client: Client,
     url: String,
     user_id: Option<String>,
     token: String,
 }
 
-impl API {
+impl Jira {
     pub fn new(url: String, token: String) -> Self {
-        API {
+        Jira {
             client: Client::builder()
                 .timeout(std::time::Duration::from_secs(2))
                 .build()

@@ -1,9 +1,9 @@
-use crate::api::API;
+use crate::api::Jira;
 use anyhow::Result;
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use colored::Colorize;
 
-pub fn execute(api: &API, task: &str, time: &str, day: &String, yes: &bool) -> Result<()> {
+pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Result<()> {
     let time_spent = parse_time(time)?;
     let dates = parse_date(day, true)?;
 

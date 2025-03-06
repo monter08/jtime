@@ -10,7 +10,7 @@ pub trait Helper {
 
 impl Helper for Calendar {
     fn range_days_for_month(year: i32, month: u32) -> Result<DateRange> {
-        if month < 1 || month > 12 {
+        if !(1..=12).contains(&month) {
             return Err(anyhow!("Invalid month"));
         }
 

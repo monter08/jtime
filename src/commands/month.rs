@@ -1,5 +1,5 @@
 use crate::{
-    api::API,
+    api::Jira,
     cache::Cache,
     config::Config,
     view::{helper::Helper, Calendar, Render},
@@ -8,7 +8,7 @@ use anyhow::Result;
 
 use chrono::{Datelike, Utc};
 
-pub fn execute(config: &Config, api: &API, use_cache: &bool, month: &Option<u32>) -> Result<()> {
+pub fn execute(config: &Config, api: &Jira, use_cache: &bool, month: &Option<u32>) -> Result<()> {
     let cache = Cache::new("month".to_string());
 
     if *use_cache {
@@ -33,41 +33,3 @@ pub fn execute(config: &Config, api: &API, use_cache: &bool, month: &Option<u32>
 
     Ok(())
 }
-
-// let tasks = vec![
-//     WorkLog {
-//         day: Utc.ymd(2025, 3, 3).and_hms(8, 0, 0),
-//         task: "DD-2165".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 3, 4).and_hms(8, 0, 0),
-//         task: "DD-2165".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 2, 24).and_hms(8, 0, 0),
-//         task: "PRIC-1954".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 2, 25).and_hms(8, 0, 0),
-//         task: "PRIC-1954".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 2, 26).and_hms(8, 0, 0),
-//         task: "PRIC-1954".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 2, 27).and_hms(8, 7, 0),
-//         task: "PRIC-1954".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-//     WorkLog {
-//         day: Utc.ymd(2025, 2, 28).and_hms(9, 0, 0),
-//         task: "PRIC-1954".to_string(),
-//         time_spent: "1d".to_string(),
-//     },
-// ];
