@@ -1,18 +1,18 @@
-use crate::api::API;
+use crate::api::Jira;
 use crate::cli::{Cli, Commands};
 use crate::commands;
 use crate::config::Config;
 use anyhow::Result;
 
 pub struct App {
-    api: API,
+    api: Jira,
     config: Config,
 }
 
 impl App {
     pub fn new() -> Result<Self> {
         let config = Config::load()?;
-        let api = API::new(config.jira_url.clone(), config.jira_token.clone());
+        let api = Jira::new(config.jira_url.clone(), config.jira_token.clone());
         Ok(Self { api, config })
     }
 

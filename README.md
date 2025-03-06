@@ -14,7 +14,7 @@ A simple command-line tool to track and manage your time in Jira.
 
 ```bash
 # Clone the repository
-git clone https://github.com/monter08/rjira.git
+git clone https://github.com/monter08/jtime.git
 cd rjira
 
 # Build and install

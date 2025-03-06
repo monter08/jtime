@@ -1,5 +1,5 @@
 use crate::{
-    api::API,
+    api::Jira,
     cache::Cache,
     config::Config,
     view::{helper::Helper, Calendar, Render},
@@ -8,7 +8,7 @@ use anyhow::Result;
 
 use chrono::Utc;
 
-pub fn execute(config: &Config, api: &API, prev: &bool, use_cache: &bool) -> Result<()> {
+pub fn execute(config: &Config, api: &Jira, prev: &bool, use_cache: &bool) -> Result<()> {
     let cache = Cache::new(if *prev { "previous" } else { "current" }.to_string());
 
     if *use_cache {
@@ -18,7 +18,6 @@ pub fn execute(config: &Config, api: &API, prev: &bool, use_cache: &bool) -> Res
         }
     }
 
-    // Prev week
     let today = Utc::now().date_naive();
     let date = if *prev {
         today - chrono::Duration::days(7)
