@@ -1,29 +1,68 @@
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "v[0-9]+.*"
+
+name: Release
 
 jobs:
-  release:
-    name: release ${{ matrix.target }}
+  create_release:
+    name: Create release
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-gnu
-            archive: zip
-          - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
-          - target: x86_64-apple-darwin
-            archive: zip
-          - target: aarch64-apple-darwin
-            archive: zip
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@master
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.5
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          ARCHIVE_TYPES: ${{ matrix.archive }}
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: true
+
+  release_assets:
+    name: Release assets
+    needs: create_release
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            short: linux-amd64
+          - os: macos-13
+            target: x86_64-apple-darwin
+            short: darwin-amd64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            short: windows-amd64
+            extension: .exe
+          - os: macos-14
+            target: aarch64-apple-darwin
+            short: darwin-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.config.target }}
+          default: true
+          override: true
+      - run: cargo build --release --target ${{ matrix.config.target }}
+      - run: strip target/${{ matrix.config.target }}/release/jtime${{ matrix.config.extension }}
+        if: runner.os != 'Windows'
+      - run: mv target/${{ matrix.config.target }}/release/jtime${{ matrix.config.extension }} target/${{ matrix.config.target }}/release/jtime-${{ matrix.config.short }}${{ matrix.config.extension }}
+      - run: tar -czf target/${{ matrix.config.target }}/release/jtime-${{ matrix.config.short }}.tar.gz -C target/${{ matrix.config.target }}/release jtime-${{ matrix.config.short }}${{ matrix.config.extension }}
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: jtime-${{ matrix.config.short }}.tar.gz
+          asset_path: target/${{ matrix.config.target }}/release/jtime-${{ matrix.config.short }}.tar.gz
+          asset_content_type: application/tar+gzip
