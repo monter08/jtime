@@ -5,7 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-anyhow = "1.0.96"
+anyhow = "1.0.97"
 chrono = "0.4"
 clap = { version = "4.5.31", features = ["derive"] }
 cli-table = "0.4.9"
