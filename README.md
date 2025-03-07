@@ -10,6 +10,12 @@ A simple command-line tool to track and manage your time in Jira.
 
 ## Installation
 
+### Easy Installation
+
+```bash
+curl -sSL https://raw.githubusercontent.com/monter08/jtime/main/install.sh | bash
+```
+
 ### From source
 
 ```bash
@@ -19,12 +25,6 @@ cd rjira
 
 # Build and install
 cargo install --path .
-```
-
-### Cargo
-
-```bash
-cargo install jtime
 ```
 
 ## Usage
