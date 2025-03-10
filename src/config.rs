@@ -13,7 +13,7 @@ pub struct Config {
 impl Config {
     fn file_path() -> Result<String> {
         let home = std::env::var("HOME").context("Failed to get home directory")?;
-        Ok(format!("{}/.jira-cli.json", home))
+        Ok(format!("{}/.config/jtime/config.json", home))
     }
 
     pub fn load() -> Result<Self> {
@@ -30,6 +30,9 @@ impl Config {
 
     pub fn save(&self) -> Result<()> {
         let path = Self::file_path()?;
+        if let Some(parent) = std::path::Path::new(&path).parent() {
+            std::fs::create_dir_all(parent)?;
+        }
         let file = std::fs::File::create(&path)?;
         serde_json::to_writer(file, self)?;
         Ok(())

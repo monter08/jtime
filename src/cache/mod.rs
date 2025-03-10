@@ -1,6 +1,9 @@
+use anyhow::{Context, Result};
 pub struct Cache {
     cache_file: String,
 }
+
+const CACHE_DURATION: u64 = 60 * 60 * 6; // 6 hours
 
 impl Cache {
     pub fn new(name: String) -> Cache {
@@ -15,30 +18,38 @@ impl Cache {
         std::fs::write(&self.cache_file, data).expect("Failed to write cache file");
     }
 
-    pub fn load(&self) -> Option<String> {
-        if self.exists() && !self.is_valid() {
-            return None;
+    pub fn load(&self) -> Result<Option<String>> {
+        if !self.exists() || !self.is_valid()? {
+            self.clear();
+            return Ok(None);
         }
 
-        match std::fs::read_to_string(&self.cache_file) {
+        Ok(match std::fs::read_to_string(&self.cache_file) {
             Ok(data) => Some(data),
             Err(_) => None,
-        }
+        })
     }
 
     pub fn exists(&self) -> bool {
-        std::path::Path::new(&self.cache_file).exists() && self.is_valid()
+        std::path::Path::new(&self.cache_file).exists()
     }
 
-    pub fn is_valid(&self) -> bool {
-        let metadata = std::fs::metadata(&self.cache_file).expect("Failed to read cache metadata");
+    pub fn is_valid(&self) -> Result<bool> {
+        let metadata =
+            std::fs::metadata(&self.cache_file).context("Failed to read cache metadata")?;
         let created = metadata
             .created()
-            .expect("Failed to read cache creation time");
+            .context("Failed to read cache creation time")?;
         let now = std::time::SystemTime::now();
         let duration = now
             .duration_since(created)
-            .expect("Failed to calculate duration");
-        duration.as_secs() < 60 * 60 * 12
+            .context("Failed to calculate duration")?;
+        Ok(duration.as_secs() < CACHE_DURATION)
+    }
+
+    pub fn clear(&self) {
+        if self.exists() {
+            std::fs::remove_file(&self.cache_file).expect("Failed to remove cache file");
+        }
     }
 }
