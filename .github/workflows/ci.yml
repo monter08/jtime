@@ -54,22 +54,14 @@ jobs:
         with:
           command: test
           args: --verbose
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=$(grep -m1 'version = ' Cargo.toml | cut -d '"' -f2)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
-
+          
   release:
     name: Create Release
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # This permission is needed to create releases
     steps:
       - uses: actions/checkout@v3
         with:
@@ -82,6 +74,16 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
+
+      - name: Bump Cargo Version
+        run: |
+          cargo install cargo-edit
+          cargo set-version --bump patch
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Cargo.toml
+          git commit -m "chore: bump version"
+          git push
 
       - name: Check if tag exists
         id: check_tag
@@ -99,7 +101,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           tag_name: v${{ env.VERSION }}
           release_name: Release v${{ env.VERSION }}
