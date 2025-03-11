@@ -1,7 +1,6 @@
 on:
   push:
-    tags:
-      - "v[0-9]+.*"
+    branches: [main]
 
 name: Release
 
@@ -12,16 +11,43 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Bump Cargo Version
+        run: |
+          cargo install cargo-edit
+          cargo set-version --bump patch
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Cargo.toml
+          git commit -m "chore: bump version"
+          git push
+          VERSION=$(grep -m1 'version = ' Cargo.toml | cut -d '"' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "TAG_EXISTS=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          VERSION: ${{ env.VERSION }}
       - name: Create release
+        if: steps.check_tag.outputs.TAG_EXISTS == 'false'
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          TOKEN: ${{ secrets.TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          tag_name: v${{ env.VERSION }}
+          release_name: Release v${{ env.VERSION }}
           draft: false
-          prerelease: true
+          prerelease: false
 
   release_assets:
     name: Release assets
@@ -60,7 +86,7 @@ jobs:
       - name: Upload release assets
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_name: jtime-${{ matrix.config.short }}.tar.gz
