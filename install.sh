@@ -33,31 +33,33 @@ fi
 
 # Define the download URL
 LATEST_VERSION=$(curl -s https://api.github.com/repos/monter08/jtime/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-BINARY_NAME="jtime"
-if [ "$OS" = "windows" ]; then
-    BINARY_NAME="jtime.exe"
-fi
+
 
 # Map OS and architecture to rust-build target format
 TARGET=""
 if [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then
-    TARGET="x86_64-unknown-linux-musl"
+    TARGET="linux-amd64"
     ARCHIVE_EXT="tar.gz"
 elif [ "$OS" = "macos" ] && [ "$ARCH" = "x86_64" ]; then
-    TARGET="x86_64-apple-darwin"
-    ARCHIVE_EXT="zip"
+    TARGET="darwin-amd64"
+    ARCHIVE_EXT="tar.gz"
 elif [ "$OS" = "macos" ] && [ "$ARCH" = "aarch64" ]; then
-    TARGET="aarch64-apple-darwin"
-    ARCHIVE_EXT="zip"
+    TARGET="darwin-arm64"
+    ARCHIVE_EXT="tar.gz"
 elif [ "$OS" = "windows" ]; then
-    TARGET="x86_64-pc-windows-gnu"
-    ARCHIVE_EXT="zip"
+    TARGET="windows-amd64"
+    ARCHIVE_EXT="tar.gz"
 else
     echo "Unsupported OS/architecture combination: $OS/$ARCH"
     exit 1
 fi
 
-DOWNLOAD_URL="https://github.com/monter08/jtime/releases/download/${LATEST_VERSION}/jtime-${TARGET}-${LATEST_VERSION}.${ARCHIVE_EXT}"
+BINARY_NAME="jtime-${TARGET}"
+if [ "$OS" = "windows" ]; then
+    BINARY_NAME="jtime-${TARGET}.exe"
+fi
+
+DOWNLOAD_URL="https://github.com/monter08/jtime/releases/download/${LATEST_VERSION}/jtime-${TARGET}.${ARCHIVE_EXT}"
 
 # Create temp directory
 TMP_DIR=$(mktemp -d)
@@ -89,8 +91,8 @@ if [ -w "$INSTALL_DIR" ]; then
     mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/"
 else
     echo "Installing to $INSTALL_DIR requires admin privileges"
-    sudo mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/"
+    sudo mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/jtime"
 fi
 
-echo -e "${GREEN}JTime successfully installed to $INSTALL_DIR/$BINARY_NAME${NC}"
+echo -e "${GREEN}JTime successfully installed to $INSTALL_DIR/jtime${NC}"
 echo -e "Run ${BLUE}jtime --help${NC} to get started"

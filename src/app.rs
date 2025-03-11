@@ -35,6 +35,7 @@ impl App {
                 token,
                 show_weekends,
             } => commands::config::execute(self.config.clone(), url, token, show_weekends),
+            Commands::Update => commands::update::execute(),
         }
     }
 }

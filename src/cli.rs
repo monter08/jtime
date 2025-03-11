@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 #[command(
     name = "jtime",
     author = "Dawid Stachow",
-    version = "1.0",
+    version = env!("CARGO_PKG_VERSION"),
     about = "Jira time tracking CLI tool"
 )]
 pub struct Cli {
@@ -87,4 +87,10 @@ pub enum Commands {
         #[clap(long)]
         show_weekends: Option<bool>,
     },
+
+    /// (Alias: u)
+    /// Update JTime to the latest version
+    /// Example: jtime update
+    #[clap(alias = "u")]
+    Update,
 }
