@@ -103,14 +103,16 @@ jtime config --show-weekends true
 
 ## Configuration
 
-The configuration file is stored at `~/.config/jtime/config.toml`.
+The configuration file is stored at `~/.config/jtime/config.json`.
 
 Example configuration:
 
-```toml
-url = "https://your-company.atlassian.net"
-token = "your-jira-api-token"
-show_weekends = false
+```json
+{
+  "jira_url": "https://your-company.atlassian.net",
+  "jira_token": "your-jira-api-token",
+  "show_weekends": false
+}
 ```
 
 ## License

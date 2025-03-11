@@ -12,7 +12,7 @@ pub fn execute(config: &Config, api: &Jira, use_cache: &bool, month: &Option<u32
     let cache = Cache::new("month".to_string());
 
     if *use_cache {
-        if let Some(data) = cache.load() {
+        if let Some(data) = cache.load()? {
             println!("{}", data);
             return Ok(());
         }

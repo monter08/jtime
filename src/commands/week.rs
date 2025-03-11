@@ -12,7 +12,7 @@ pub fn execute(config: &Config, api: &Jira, prev: &bool, use_cache: &bool) -> Re
     let cache = Cache::new(if *prev { "previous" } else { "current" }.to_string());
 
     if *use_cache {
-        if let Some(data) = cache.load() {
+        if let Some(data) = cache.load()? {
             println!("{}", data);
             return Ok(());
         }

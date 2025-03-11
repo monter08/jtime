@@ -66,25 +66,29 @@ fn render_cell(day: NaiveDate, tasks: &WorkLogList) -> CellStruct {
         }
     };
 
-    let task_text = if tasks.is_empty() {
+    // Format task text
+    let task_text = tasks
+        .iter()
+        .map(|t| match t.time_spent.as_str() {
+            "1d" => t.task.green().to_string(),
+            _ => format!("{} ({})", t.task.green(), t.time_spent.dimmed()),
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let task_text = if task_text.is_empty() {
         "-".to_string()
     } else {
-        tasks
-            .iter()
-            .map(|t| {
-                let task_text = t.task.clone().green().to_string();
-                if t.time_spent != "1d" {
-                    format!("{} ({})", task_text, t.time_spent.dimmed())
-                } else {
-                    task_text
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
+        task_text
     };
 
-    // Create formatted cell
-    let width = tasks.iter().map(|t| t.task.len()).max().unwrap_or(0);
+    let ansi_regex = regex::Regex::new(r"\x1B\[[0-9;]*[mK]").unwrap();
+    let width = task_text
+        .lines()
+        .map(|line| ansi_regex.replace_all(line, "").len())
+        .max()
+        .unwrap_or(0);
+
     format!("{:^width$}\n{}", day_num, task_text, width = width)
         .cell()
         .justify(Justify::Center)

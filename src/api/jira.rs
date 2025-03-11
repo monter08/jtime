@@ -15,7 +15,7 @@ impl Jira {
     pub fn new(url: String, token: String) -> Self {
         Jira {
             client: Client::builder()
-                .timeout(std::time::Duration::from_secs(2))
+                .timeout(std::time::Duration::from_secs(5))
                 .build()
                 .expect("Failed to build client"),
             url,
