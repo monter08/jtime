@@ -22,6 +22,5 @@ tempfile = "3.6"
 [profile.release]
 strip = true
 opt-level = "z"  # Optimize for size over speed
-lto = true       # Enable Link Time Optimization
 codegen-units = 1  # Reduce parallel code generation for better optimization
 panic = "abort"  # Removes panic unwinding code
