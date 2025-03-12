@@ -1,11 +1,47 @@
 use crate::api::Jira;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use colored::Colorize;
 
 pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Result<()> {
     let time_spent = parse_time(time)?;
-    let dates = parse_date(day, true)?;
+    let mut dates = parse_date(day, true)?;
+
+    // Check if the date is a weekend
+    let mut weekends_day = vec![];
+    for date in dates.clone() {
+        if date.weekday().num_days_from_monday() >= 5 {
+            weekends_day.push(date);
+        }
+    }
+    if !weekends_day.is_empty() {
+        println!(
+            "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :) [y/N]",
+            weekends_day
+                .iter()
+                .map(|d| d.format("%Y-%m-%d").to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+                .green()
+        );
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+
+        match input.trim().to_lowercase().as_str() {
+            "y" => {
+                // Keep all dates including weekends
+            }
+            "n" => {
+                // Remove weekends from dates in-place
+                dates.retain(|d| d.weekday().num_days_from_monday() < 5);
+            }
+            _ => {
+                println!("Invalid input, please enter y or n");
+                return Ok(());
+            }
+        }
+    }
 
     for date in dates.clone() {
         println!(
@@ -14,26 +50,29 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
             date.format("%Y-%m-%d").to_string().green(),
             task.green()
         );
+    }
 
-        // confirm
-        if !*yes {
-            println!("Are you sure? [y/N]");
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input)?;
-            if input.trim().to_lowercase() != "y" {
-                println!("Aborted.");
-                return Ok(());
-            }
+    if !*yes {
+        println!("Are you sure? [y/N]");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if input.trim().to_lowercase() != "y" {
+            println!("Aborted.");
+            return Ok(());
         }
     }
 
     for date in dates {
-        if api.log_worktime(task, time_spent, &date)? {
-            println!("Logged time successfully.");
-        } else {
-            println!("Failed to log time.");
-        }
+        api.log_worktime(task, time_spent, &date).context(format!(
+            "Failed to log time for {}",
+            date.format("%Y-%m-%d")
+        ))?;
     }
+
+    println!(
+        "{}",
+        "Logged time successfully! Time for coffee! ☕".green()
+    );
 
     Ok(())
 }
@@ -63,7 +102,6 @@ pub fn parse_date(date_str: &str, with_weekend: bool) -> Result<Vec<NaiveDate>> 
             start_str.trim().parse::<u32>(),
             end_str.trim().parse::<u32>(),
         ) {
-            println!("start_day: {}, end_day: {}", start_day, end_day);
             let dates = (start_day..=end_day)
                 .filter_map(|d| NaiveDate::from_ymd_opt(year, month, d))
                 .filter(|d| with_weekend || d.weekday().num_days_from_monday() < 5)

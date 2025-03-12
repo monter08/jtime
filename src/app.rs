@@ -23,7 +23,7 @@ impl App {
                 time,
                 day,
                 yes,
-            } => commands::add::execute(&self.api, task, time, day, yes),
+            } => commands::log::execute(&self.api, task, time, day, yes),
             Commands::Month { cache, month } => {
                 commands::month::execute(&self.config, &self.api, cache, month)
             }
