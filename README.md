@@ -19,12 +19,8 @@ curl -sSL https://raw.githubusercontent.com/monter08/jtime/main/install.sh | bas
 ### From source
 
 ```bash
-# Clone the repository
-git clone https://github.com/monter08/jtime.git
-cd rjira
-
 # Build and install
-cargo install --path .
+cargo install --git https://github.com/monter08/jtime.git
 ```
 
 ## Usage
@@ -41,13 +37,13 @@ jtime log XX-1234
 jtime l XX-1234
 
 # Log 1 hour and 30 minutes for the 2nd day of current month
-jtime l XX-1234 --day 2 --time 1h30m
+jtime l XX-1234 2 1h30m
 
 # Log time for multiple days
-jtime l XX-1234 --day 2-5 --time 1h30m
+jtime l XX-1234 2-5 1h30m
 
 # Skip confirmation prompt
-jtime l XX-1234 --yes
+jtime l XX-1234 -y
 ```
 
 ### View monthly logs
@@ -63,9 +59,11 @@ jtime m
 
 # View February
 jtime m --month 2
+jtime m -m 2
 
 # Use cached data
 jtime m --cache
+jtim m -c
 ```
 
 ### View weekly logs
@@ -80,7 +78,12 @@ jtime week
 jtime w
 
 # Use cached data
-jtime week --cache
+jtime w --cache
+jtime w -c
+
+# View previous week
+jtime w --prev
+jtime w -p
 ```
 
 ### Configuration
