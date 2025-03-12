@@ -8,9 +8,14 @@ pub fn execute(
     token: &Option<String>,
     show_weekends: &Option<bool>,
 ) -> Result<()> {
-    if let Some(url) = url {
-        config.jira_url = url.clone();
+    if let Some(raw_url) = url {
+        let clean_url = raw_url
+            .trim_end_matches('/')
+            .trim_start_matches("https://")
+            .trim_start_matches("http://");
+        config.jira_url = clean_url.to_string();
     }
+
     if let Some(token) = token {
         config.jira_token = token.clone();
     }
@@ -20,6 +25,8 @@ pub fn execute(
 
     if url.is_some() || token.is_some() || show_weekends.is_some() {
         config.save()?;
+        println!("{}", "Configuration updated successfully! :)".green());
+        return Ok(());
     }
 
     println!("Jira URL (url): {}", config.jira_url.green());

@@ -24,14 +24,20 @@ impl Jira {
         }
     }
 
+    fn build_url(&self, path: &str) -> String {
+        format!("https://{}/rest{}", self.url, path)
+    }
+
     pub fn get_user_id(&self) -> Result<String> {
         if let Some(user_id) = &self.user_id {
             return Ok(user_id.clone());
         }
 
-        let url = format!("{}/rest/api/2/myself", self.url);
-
-        let response = self.client.get(&url).bearer_auth(&self.token).send()?;
+        let response = self
+            .client
+            .get(self.build_url("/api/2/myself"))
+            .bearer_auth(&self.token)
+            .send()?;
 
         if response.status().is_success() {
             let users: Value = response.json()?;
@@ -50,7 +56,7 @@ impl Jira {
             "timeSpentSeconds": time_spent
         });
 
-        let url = format!("{}/rest/api/2/issue/{}/worklog", self.url, task);
+        let url = self.build_url(format!("/api/2/issue/{}/worklog", task).as_str());
 
         let response = self
             .client
@@ -68,10 +74,8 @@ impl Jira {
 
     pub fn fetch_worklogs(&self, range: DateRange) -> Result<WorkLogList> {
         let user_id = self.get_user_id()?;
-        let url = format!(
-            "{}/rest/actonic-tb/1.0/api/worklogs/search-issues",
-            self.url
-        );
+        let url = self.build_url("/actonic-tb/1.0/api/worklogs/search-issues");
+
         let request_body = serde_json::json!({
             "startDate": range.from.format("%Y/%m/%d").to_string(),
             "endDate":range.to.format("%Y/%m/%d").to_string(),
@@ -142,7 +146,9 @@ impl Jira {
     }
 
     pub fn actually_works(&self) -> Result<Vec<Task>> {
-        let url = format!("{}/rest/api/2/search?jql=assignee=currentUser()%20AND%20statusCategory!=Done&maxResults=50", self.url);
+        let url = self.build_url(
+            "/api/2/search?jql=assignee=currentUser()%20AND%20statusCategory!=Done&maxResults=50",
+        );
 
         let response = self.client.get(&url).bearer_auth(&self.token).send()?;
         if !response.status().is_success() {
