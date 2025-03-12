@@ -1,4 +1,5 @@
 # JTime - Jira Time Tracking CLI Tool
+[![Build and Test](https://github.com/monter08/jtime/actions/workflows/ci.yml/badge.svg)](https://github.com/monter08/jtime/actions/workflows/ci.yml)
 
 A simple command-line tool to track and manage your time in Jira.
 
