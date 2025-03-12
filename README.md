@@ -87,6 +87,15 @@ jtime w --prev
 jtime w -p
 ```
 
+### Add greeting (example in fish)
+If you want to see what you're working on every time you open your terminal, add the following to your ~/.config/fish/config.fish:
+
+```fish
+function fish_greeting
+  jtime w --cache
+end
+```
+
 ### Configuration
 
 Set up or view your Jira configuration:
