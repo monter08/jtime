@@ -65,7 +65,7 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
     for date in dates {
         api.log_worktime(task, time_spent, &date).context(format!(
             "Failed to log time for {}",
-            date.format("%Y-%m-%d").to_string()
+            date.format("%Y-%m-%d")
         ))?;
     }
 
