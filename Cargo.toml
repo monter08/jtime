@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.96"
 chrono = "0.4"
-clap = { version = "4.5.31", features = ["derive"] }
+clap = { version = "4.5.38", features = ["derive"] }
 cli-table = "0.4.9"
 colored = "3.0.0"
 regex = "1.11.1"
