@@ -27,8 +27,7 @@ pub enum Commands {
         /// Day in this monh (eg. 2 or multiple days 2-5)
         /// Default is current day
         /// Example: 2
-        #[clap(default_value = "today")]
-        day: String,
+        day: Option<String>,
 
         /// Time spent (e.g. 1h30m)
         #[clap(default_value = "8h")]

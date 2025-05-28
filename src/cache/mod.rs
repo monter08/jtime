@@ -24,10 +24,7 @@ impl Cache {
             return Ok(None);
         }
 
-        Ok(match std::fs::read_to_string(&self.cache_file) {
-            Ok(data) => Some(data),
-            Err(_) => None,
-        })
+        Ok(std::fs::read_to_string(&self.cache_file).ok())
     }
 
     pub fn exists(&self) -> bool {
