@@ -2,10 +2,52 @@ use crate::api::Jira;
 use anyhow::{Context, Result};
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use colored::Colorize;
+use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 
-pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Result<()> {
+pub fn execute(
+    api: &Jira,
+    cli_task: &Option<String>,
+    time: &str,
+    cli_day: &Option<String>,
+    yes: &bool,
+) -> Result<()> {
+    let task = match cli_task {
+        Some(t) => t,
+        None => {
+            let actually_works = api.actually_works()?;
+            if actually_works.is_empty() {
+                anyhow::bail!("No tasks found. Please set up your tasks first.");
+            }
+
+            let days: Vec<String> = actually_works
+                .iter()
+                .map(|d| format!("({}) {}", d.id, d.name))
+                .chain(std::iter::once("Cancel operation".to_string()))
+                .collect();
+
+            let day = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Please select the task you want to log time for:")
+                .items(&days)
+                .default(0)
+                .interact()?;
+            if day == days.len() - 1 {
+                println!("Aborted.");
+                return Ok(());
+            }
+            &actually_works[day].id.clone()
+        }
+    };
+
+    let day = match cli_day.clone() {
+        Some(d) => d,
+        None => Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Please enter the day(s) you want to log time for (e.g., 2 or 2-5):")
+            .default("today".to_string())
+            .interact_text()?,
+    };
+
     let time_spent = parse_time(time)?;
-    let mut dates = parse_date(day, true)?;
+    let mut dates = parse_date(day.as_str(), true)?;
 
     // Check if the date is a weekend
     let mut weekends_day = vec![];
@@ -15,29 +57,25 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
         }
     }
     if !weekends_day.is_empty() {
-        println!(
-            "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :) [y/N]",
-            weekends_day
-                .iter()
-                .map(|d| d.format("%Y-%m-%d").to_string())
-                .collect::<Vec<String>>()
-                .join(", ")
-                .green()
-        );
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(format!(
+                "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :)",
+                weekends_day
+                    .iter()
+                    .map(|d| d.format("%Y-%m-%d").to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .green()
+            ))
+            .default(0)
+            .items(&["Skip weekend days", "Keep weekend days", "Cancel operation"])
+            .interact()?;
 
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        match input.trim().to_lowercase().as_str() {
-            "y" => {
-                // Keep all dates including weekends
-            }
-            "n" => {
-                // Remove weekends from dates in-place
-                dates.retain(|d| d.weekday().num_days_from_monday() < 5);
-            }
+        match selection {
+            0 => dates.retain(|d| d.weekday().num_days_from_monday() < 5),
+            1 => {} // Keep all dates
             _ => {
-                println!("Invalid input, please enter y or n");
+                println!("Aborted.");
                 return Ok(());
             }
         }
@@ -52,14 +90,16 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
         );
     }
 
-    if !*yes {
-        println!("Are you sure? [y/N]");
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if input.trim().to_lowercase() != "y" {
-            println!("Aborted.");
-            return Ok(());
-        }
+    if !*yes
+        && !Confirm::with_theme(&ColorfulTheme::default())
+            .with_prompt("Are you sure?")
+            .default(true)
+            .show_default(true)
+            .wait_for_newline(true)
+            .interact()?
+    {
+        println!("Aborted.");
+        return Ok(());
     }
 
     for date in dates {
@@ -199,14 +239,32 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_day_range_without_weeeknd() -> Result<()> {
-        let parsed = parse_date("1-3", false)?;
-        let now = Utc::now().naive_utc();
-        assert_eq!(
-            parsed,
-            vec![
-                NaiveDate::from_ymd_opt(now.year(), now.month(), 3).unwrap(), // 1-2 March 2025 is weekend
-            ]
+    fn test_parse_day_range_without_weekend() -> Result<()> {
+        // Find a range in the current month where the first two days are weekend and the third is a weekday
+        // For robustness, search for such a range in the current month
+        let now = Utc::now().naive_utc().date();
+        let (year, month) = (now.year(), now.month());
+        let mut found = false;
+        for start_day in 1..=28 {
+            let d1 = NaiveDate::from_ymd_opt(year, month, start_day);
+            let d2 = NaiveDate::from_ymd_opt(year, month, start_day + 1);
+            let d3 = NaiveDate::from_ymd_opt(year, month, start_day + 2);
+            if let (Some(d1), Some(d2), Some(d3)) = (d1, d2, d3) {
+                if d1.weekday().num_days_from_monday() >= 5
+                    && d2.weekday().num_days_from_monday() >= 5
+                    && d3.weekday().num_days_from_monday() < 5
+                {
+                    let range = format!("{}-{}", start_day, start_day + 2);
+                    let parsed = parse_date(&range, false)?;
+                    assert_eq!(parsed, vec![d3]);
+                    found = true;
+                    break;
+                }
+            }
+        }
+        assert!(
+            found,
+            "Could not find a suitable weekend-to-weekday range in this month"
         );
         Ok(())
     }
