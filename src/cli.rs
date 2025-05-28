@@ -22,7 +22,7 @@ pub enum Commands {
     #[clap(alias = "l")]
     Log {
         /// Task identifier (eg. XX-1234)
-        task: String,
+        task: Option<String>,
 
         /// Day in this monh (eg. 2 or multiple days 2-5)
         /// Default is current day

@@ -2,8 +2,27 @@ use crate::api::Jira;
 use anyhow::{Context, Result};
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use colored::Colorize;
+use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 
-pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Result<()> {
+pub fn execute(api: &Jira, cli_task: &Option<String>, time: &str, day: &str, yes: &bool) -> Result<()> {
+    let task = match cli_task {
+        Some(t) => t,
+        None => {
+            let actually_works = api.actually_works()?;
+            if actually_works.is_empty() {
+                anyhow::bail!("No tasks found. Please set up your tasks first.");
+            }
+            let days = actually_works.iter().map(|d| format!("({}) {}", d.id, d.name)).collect::<Vec<_>>();
+
+            let day = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Please select the task you want to log time for:")
+                .items(&days)
+                .default(0)
+                .interact()?;
+            &actually_works[day].id.clone()
+        }
+    };
+
     let time_spent = parse_time(time)?;
     let mut dates = parse_date(day, true)?;
 
@@ -15,29 +34,25 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
         }
     }
     if !weekends_day.is_empty() {
-        println!(
-            "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :) [y/N]",
-            weekends_day
-                .iter()
-                .map(|d| d.format("%Y-%m-%d").to_string())
-                .collect::<Vec<String>>()
-                .join(", ")
-                .green()
-        );
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(format!(
+                "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :)",
+                weekends_day
+                    .iter()
+                    .map(|d| d.format("%Y-%m-%d").to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .green()
+            ))
+            .default(0)
+            .items(&["Skip weekend days", "Keep weekend days", "Cancel operation"])
+            .interact()?;
 
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        match input.trim().to_lowercase().as_str() {
-            "y" => {
-                // Keep all dates including weekends
-            }
-            "n" => {
-                // Remove weekends from dates in-place
-                dates.retain(|d| d.weekday().num_days_from_monday() < 5);
-            }
+        match selection {
+            0 => dates.retain(|d| d.weekday().num_days_from_monday() < 5),
+            1 => {} // Keep all dates
             _ => {
-                println!("Invalid input, please enter y or n");
+                println!("Aborted.");
                 return Ok(());
             }
         }
@@ -52,14 +67,14 @@ pub fn execute(api: &Jira, task: &str, time: &str, day: &str, yes: &bool) -> Res
         );
     }
 
-    if !*yes {
-        println!("Are you sure? [y/N]");
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        if input.trim().to_lowercase() != "y" {
-            println!("Aborted.");
-            return Ok(());
-        }
+    if !*yes && !Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Are you sure?")
+        .default(true)
+        .show_default(true)
+        .wait_for_newline(true)
+        .interact()? {
+        println!("Aborted.");
+        return Ok(());
     }
 
     for date in dates {
