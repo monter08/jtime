@@ -6,6 +6,10 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub jira_url: String,
     pub jira_token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nager_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nager_country_code: Option<String>,
     #[serde(default)]
     pub show_weekends: bool,
 }
@@ -56,6 +60,8 @@ impl Config {
         Ok(Config {
             jira_url,
             jira_token,
+            nager_url: None,
+            nager_country_code: None,
             show_weekends: false,
         })
     }
