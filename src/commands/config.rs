@@ -48,7 +48,10 @@ pub fn execute(
         println!("Nager URL (nager_url): {}", nager_url.green());
     }
     if let Some(nager_country_code) = config.nager_country_code {
-        println!("Nager Country Code (nager_country_code): {}", nager_country_code.green());
+        println!(
+            "Nager Country Code (nager_country_code): {}",
+            nager_country_code.green()
+        );
     }
     println!(
         "Show weekends (show_weekends): {}",

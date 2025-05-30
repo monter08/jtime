@@ -3,6 +3,7 @@ use crate::cli::{Cli, Commands};
 use crate::commands;
 use crate::config::Config;
 use anyhow::Result;
+use colored::Colorize;
 
 pub struct App {
     api: Jira,
@@ -25,12 +26,13 @@ impl App {
                 time,
                 day,
                 yes,
-            } => commands::log::execute(&self.api, &self.nager, task, time, day, yes),
+            } => commands::log::execute(&self.api, &self.nager, task, time, day, yes)?,
             Commands::Month { cache, month } => {
-                commands::month::execute(&self.config, &self.api, cache, month)
+                commands::month::execute(&self.config, &self.api, cache, month)?
             }
+
             Commands::Week { cache, prev } => {
-                commands::week::execute(&self.config, &self.api, prev, cache)
+                commands::week::execute(&self.config, &self.api, prev, cache)?
             }
             Commands::Config {
                 url,
@@ -45,8 +47,26 @@ impl App {
                 nager_url,
                 nager_country_code,
                 show_weekends,
-            ),
-            Commands::Update => commands::update::execute(),
+            )?,
+            Commands::Update => commands::update::execute()?,
         }
+        self.check_for_updates()
+    }
+
+    pub fn check_for_updates(&self) -> Result<()> {
+        let latest_version = commands::update::get_latest_version()?;
+        if commands::update::current_version() != latest_version {
+            println!(
+                "{}",
+                format!(
+                    "A new version is available: {} (current: {})",
+                    latest_version.trim().green(),
+                    commands::update::current_version().red()
+                )
+                .yellow(),
+            );
+            println!("Run `{}` to update.", "jtime update".green());
+        }
+        Ok(())
     }
 }

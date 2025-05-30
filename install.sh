@@ -32,7 +32,12 @@ if [ "$OS" = "unknown" ]; then
 fi
 
 # Define the download URL
-LATEST_VERSION=$(curl -s https://api.github.com/repos/monter08/jtime/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+LATEST=$(curl -s -H "User-Agent: jtime-installer" https://api.github.com/repos/monter08/jtime/releases/latest)
+LATEST_VERSION=$(echo "$LATEST" | grep -o '"tag_name":"[^"]*"' | cut -d':' -f2 | tr -d '"' | tr -d ' ')
+if [ -z "$LATEST_VERSION" ]; then
+    echo -e "\033[0;31mFailed to get latest version from GitHub API. Please try again later.\033[0m"
+    exit 1
+fi
 
 
 # Map OS and architecture to rust-build target format
