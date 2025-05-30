@@ -82,6 +82,14 @@ pub enum Commands {
         #[clap(long)]
         token: Option<String>,
 
+        /// Nager url
+        #[clap(long)]
+        nager_url: Option<Option<String>>,
+
+        /// Country code for nager
+        #[clap(long)]
+        nager_country_code: Option<Option<String>>,
+
         /// Show weekends
         #[clap(long)]
         show_weekends: Option<bool>,

@@ -1,4 +1,5 @@
-use crate::api::Jira;
+use crate::api::nager::NagerHoliday;
+use crate::api::{Jira, Nager};
 use anyhow::{Context, Result};
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use colored::Colorize;
@@ -6,6 +7,7 @@ use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 
 pub fn execute(
     api: &Jira,
+    nager: &Nager,
     cli_task: &Option<String>,
     time: &str,
     cli_day: &Option<String>,
@@ -49,37 +51,26 @@ pub fn execute(
     let time_spent = parse_time(time)?;
     let mut dates = parse_date(day.as_str(), true)?;
 
-    // Check if the date is a weekend
-    let mut weekends_day = vec![];
-    for date in dates.clone() {
-        if date.weekday().num_days_from_monday() >= 5 {
-            weekends_day.push(date);
+    match check_weekends(&mut dates) {
+        Ok(_) => {}
+        Err(err) => {
+            println!("{}", err);
+            return Ok(());
         }
-    }
-    if !weekends_day.is_empty() {
-        let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(format!(
-                "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :)",
-                weekends_day
-                    .iter()
-                    .map(|d| d.format("%Y-%m-%d").to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-                    .green()
-            ))
-            .default(0)
-            .items(&["Skip weekend days", "Keep weekend days", "Cancel operation"])
-            .interact()?;
+    };
 
-        match selection {
-            0 => dates.retain(|d| d.weekday().num_days_from_monday() < 5),
-            1 => {} // Keep all dates
-            _ => {
-                println!("Aborted.");
-                return Ok(());
-            }
-        }
+    if dates.is_empty() {
+        println!("Nothing to log");
+        return Ok(());
     }
+
+    match check_holidays(nager, &mut dates) {
+        Ok(_) => (),
+        Err(err) => {
+            println!("{}", err);
+            return Ok(());
+        }
+    };
 
     for date in dates.clone() {
         println!(
@@ -113,6 +104,109 @@ pub fn execute(
         "{}",
         "Logged time successfully! Time for coffee! ☕".green()
     );
+
+    Ok(())
+}
+
+fn check_weekends(dates: &mut Vec<NaiveDate>) -> Result<()> {
+    if dates.is_empty() {
+        return Ok(());
+    }
+
+    // Check if the date is a weekend
+    let weekends_day: Vec<NaiveDate> = dates
+        .iter()
+        .filter(|d| d.weekday().num_days_from_monday() >= 5)
+        .cloned()
+        .collect();
+
+    if !weekends_day.is_empty() {
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(format!(
+                "Hey! You're trying to log time on {}, which falls on the weekend. Do you want to log time? :)",
+                weekends_day
+                    .iter()
+                    .map(|d| d.format("%Y-%m-%d").to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .green()
+            ))
+            .default(0)
+            .items(&["Skip weekend days", "Keep weekend days", "Cancel operation"])
+            .interact()?;
+
+        match selection {
+            0 => dates.retain(|d| d.weekday().num_days_from_monday() < 5),
+            1 => {} // Keep all dates
+            _ => {
+                anyhow::bail!("Aborted.")
+            }
+        };
+    }
+
+    Ok(())
+}
+
+fn check_holidays(nager: &Nager, dates: &mut Vec<NaiveDate>) -> Result<()> {
+    if dates.is_empty() {
+        return Ok(());
+    }
+
+    let first_date = dates.first().expect("No date found");
+    let holidays = match nager.get_all_holidays(first_date.format("%Y").to_string()) {
+        Ok(h) => h,
+        Err(err) => {
+            println!("{}", err);
+            if !Confirm::with_theme(&ColorfulTheme::default())
+                .with_prompt("Can't check holidays. Do you want to continue without it?")
+                .default(true)
+                .show_default(true)
+                .wait_for_newline(true)
+                .interact()?
+            {
+                anyhow::bail!("Aborted.");
+            } else {
+                return Ok(());
+            }
+        }
+    };
+
+    let holiday_dates: Vec<&NagerHoliday> = dates
+        .iter()
+        .filter_map(|d| {
+            holidays
+                .iter()
+                .find(|h| h.date == *d.format("%Y-%m-%d").to_string())
+        })
+        .collect();
+
+    if !holiday_dates.is_empty() {
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(format!(
+                "Hey! You're trying to log time on holiday(s):\n{}\n\nWhat do you want to do? :)",
+                holiday_dates
+                    .iter()
+                    .map(|d| format!("{} - {}", d.date, d.local_name.clone()))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+                    .green()
+            ))
+            .default(0)
+            .items(&["Skip holiday days", "Keep holiday days", "Cancel operation"])
+            .interact()?;
+
+        match selection {
+            0 => dates.retain(|d| {
+                holiday_dates
+                    .iter()
+                    .all(|h| h.date != d.format("%Y-%m-%d").to_string())
+            }),
+            1 => {} // Keep all dates
+            _ => {
+                anyhow::bail!("Aborted.")
+            }
+        };
+    }
 
     Ok(())
 }
