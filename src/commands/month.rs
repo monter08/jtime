@@ -6,9 +6,16 @@ use crate::{
 };
 use anyhow::Result;
 
+use crate::api::Nager;
 use chrono::{Datelike, Utc};
 
-pub fn execute(config: &Config, api: &Jira, use_cache: &bool, month: &Option<u32>) -> Result<()> {
+pub fn execute(
+    config: &Config,
+    api: &Jira,
+    nager: &Nager,
+    use_cache: &bool,
+    month: &Option<u32>,
+) -> Result<()> {
     let cache = Cache::new("month".to_string());
 
     if *use_cache {
@@ -25,11 +32,16 @@ pub fn execute(config: &Config, api: &Jira, use_cache: &bool, month: &Option<u32
     let actually_works = api.actually_works()?;
     let output = format!(
         "{}{}",
-        Calendar::render(range, tasks, config.show_weekends)?,
+        Calendar::render(
+            range,
+            tasks,
+            config.show_weekends,
+            Some(nager.get_all_holidays_map(Utc::now().year().to_string())?)
+        )?,
         Calendar::works_on(actually_works)
     );
     println!("{}", output);
-    cache.save(&output);
+    cache.save(&output)?;
 
     Ok(())
 }

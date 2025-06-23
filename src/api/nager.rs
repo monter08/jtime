@@ -1,6 +1,8 @@
+use crate::cache::Cache;
 use anyhow::Result;
 use reqwest::blocking::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::string::ToString;
 
 const DEFAULT_NAGER_URL: &str = "https://date.nager.at";
@@ -12,7 +14,7 @@ pub struct Nager {
     country_code: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct NagerHoliday {
     pub date: String,
     #[serde(rename = "localName")]
@@ -28,6 +30,7 @@ pub struct NagerHoliday {
     // pub launch_year: Option<String>,
     // pub types: Vec<String>,
 }
+pub type HolidayMap = HashMap<String, String>;
 
 impl Nager {
     pub fn new(url: Option<String>, country_code: Option<String>) -> Self {
@@ -46,6 +49,10 @@ impl Nager {
     }
 
     pub fn get_all_holidays(&self, year: String) -> Result<Vec<NagerHoliday>> {
+        let cache = Cache::new(format!("nager_holidays_{}", year).to_string());
+        if let Some(data) = cache.load()? {
+            return Ok(serde_json::from_str(&data)?);
+        }
         let response = self
             .client
             .get(self.build_url(format!(
@@ -55,9 +62,20 @@ impl Nager {
             .send()?;
 
         if response.status().is_success() {
-            Ok(response.json()?)
+            let holidays: Vec<NagerHoliday> = response.json()?;
+            cache.save(&serde_json::to_string(&holidays)?)?;
+            Ok(holidays)
         } else {
             Err(anyhow::anyhow!("Failed to fetch holidays"))
         }
+    }
+
+    pub fn get_all_holidays_map(&self, year: String) -> Result<HolidayMap> {
+        let holidays = self.get_all_holidays(year)?;
+        let mut holidays_map = HolidayMap::new();
+        for holiday in holidays {
+            holidays_map.insert(holiday.date.clone(), holiday.local_name);
+        }
+        Ok(holidays_map)
     }
 }
