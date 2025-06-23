@@ -77,11 +77,11 @@ fn render_cell(day: NaiveDate, tasks: &WorkLogList, holiday: Option<String>) -> 
         let is_empty_today = tasks.is_empty() && day == chrono::Local::now().naive_local().date();
         let is_today = day == chrono::Local::now().naive_local().date();
 
-        match (is_weekend, is_empty_today, is_today, holiday.is_some()) {
-            (true, ..) => num.dimmed(),
-            (_, true, ..) => num.red(),
-            (_, _, true, ..) => num.blue(),
-            (_, _, _, true) => num.cyan(),
+        match (holiday.is_some(), is_weekend, is_empty_today, is_today) {
+            (true, ..) => num.cyan(),
+            (_, true, ..) => num.dimmed(),
+            (_, _, true, ..) => num.red(),
+            (_, _, _, true) => num.blue(),
             _ => num,
         }
     };
