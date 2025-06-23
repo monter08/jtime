@@ -28,11 +28,11 @@ impl App {
                 yes,
             } => commands::log::execute(&self.api, &self.nager, task, time, day, yes)?,
             Commands::Month { cache, month } => {
-                commands::month::execute(&self.config, &self.api, cache, month)?
+                commands::month::execute(&self.config, &self.api, &self.nager, cache, month)?
             }
 
             Commands::Week { cache, prev } => {
-                commands::week::execute(&self.config, &self.api, prev, cache)?
+                commands::week::execute(&self.config, &self.api, &self.nager, prev, cache)?
             }
             Commands::Config {
                 url,

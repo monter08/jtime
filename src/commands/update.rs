@@ -27,7 +27,7 @@ pub fn get_latest_version() -> Result<String> {
         .trim_end_matches('\n')
         .to_string();
 
-    cache.save(&tag_name);
+    cache.save(&tag_name)?;
     Ok(tag_name)
 }
 

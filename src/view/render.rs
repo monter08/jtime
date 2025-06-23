@@ -1,4 +1,5 @@
 use super::Calendar;
+use crate::api::nager::HolidayMap;
 use crate::models::{DateRange, Task, WorkLogList, WorkLogListExt};
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
@@ -6,22 +7,40 @@ use cli_table::{format::Justify, Cell, CellStruct, Style, Table};
 use colored::Colorize;
 
 pub trait Render {
-    fn render(range: DateRange, tasks: WorkLogList, show_weekends: bool) -> Result<String>;
+    fn render(
+        range: DateRange,
+        tasks: WorkLogList,
+        show_weekends: bool,
+        holiday_map: Option<HolidayMap>,
+    ) -> Result<String>;
     fn works_on(tasks: Vec<Task>) -> String;
 }
 
 const WEEKDAYS: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 impl Render for Calendar {
-    fn render(range: DateRange, tasks: WorkLogList, show_weekends: bool) -> Result<String> {
+    fn render(
+        range: DateRange,
+        tasks: WorkLogList,
+        show_weekends: bool,
+        holiday_map: Option<HolidayMap>,
+    ) -> Result<String> {
         let weekday_limit = if show_weekends { WEEKDAYS.len() } else { 5 };
-
+        let holiday_map = holiday_map.unwrap_or_default();
         let table = range
             .days(show_weekends)
             .chunks(weekday_limit)
             .map(|week| {
                 week.iter()
-                    .map(|day| render_cell(*day, &tasks.get_by_day(*day)))
+                    .map(|day| {
+                        render_cell(
+                            *day,
+                            &tasks.get_by_day(*day),
+                            holiday_map
+                                .get(&day.format("%Y-%m-%d").to_string())
+                                .cloned(),
+                        )
+                    })
                     .collect()
             })
             .collect::<Vec<Vec<CellStruct>>>()
@@ -49,7 +68,7 @@ impl Render for Calendar {
     }
 }
 
-fn render_cell(day: NaiveDate, tasks: &WorkLogList) -> CellStruct {
+fn render_cell(day: NaiveDate, tasks: &WorkLogList, holiday: Option<String>) -> CellStruct {
     // Style day number based on conditions
     let day_num = {
         let num = day.day().to_string().yellow();
@@ -58,23 +77,39 @@ fn render_cell(day: NaiveDate, tasks: &WorkLogList) -> CellStruct {
         let is_empty_today = tasks.is_empty() && day == chrono::Local::now().naive_local().date();
         let is_today = day == chrono::Local::now().naive_local().date();
 
-        match (is_weekend, is_empty_today, is_today) {
-            (true, _, _) => num.dimmed(),
-            (_, true, _) => num.red(),
-            (_, _, true) => num.blue(),
+        match (is_weekend, is_empty_today, is_today, holiday.is_some()) {
+            (true, ..) => num.dimmed(),
+            (_, true, ..) => num.red(),
+            (_, _, true, ..) => num.blue(),
+            (_, _, _, true) => num.cyan(),
             _ => num,
         }
     };
 
     // Format task text
-    let task_text = tasks
+    let mut task_text = tasks
         .iter()
-        .map(|t| match t.time_spent.as_str() {
-            "1d" => t.task.green().to_string(),
-            _ => format!("{} ({})", t.task.green(), t.time_spent.dimmed()),
+        .map(|t| {
+            let task_display = t.task.green();
+            match t.time_spent.as_str() {
+                "1d" => task_display.to_string(),
+                _ => format!("{} ({})", task_display, t.time_spent.dimmed()),
+            }
         })
         .collect::<Vec<_>>()
         .join("\n");
+
+    if let Some(holiday_name) = holiday {
+        task_text = format!(
+            "{}{}",
+            holiday_name.bold().cyan(),
+            if task_text.is_empty() {
+                String::new()
+            } else {
+                format!("\n{}", task_text)
+            }
+        );
+    }
 
     let task_text = if task_text.is_empty() {
         "-".to_string()

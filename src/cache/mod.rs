@@ -14,8 +14,9 @@ impl Cache {
                 .to_string(),
         }
     }
-    pub fn save(&self, data: &str) {
-        std::fs::write(&self.cache_file, data).expect("Failed to write cache file");
+    pub fn save(&self, data: &str) -> Result<()> {
+        std::fs::write(&self.cache_file, data)?;
+        Ok(())
     }
 
     pub fn load(&self) -> Result<Option<String>> {
