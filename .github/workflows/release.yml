@@ -11,7 +11,7 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Bump Cargo Version
@@ -70,7 +70,7 @@ jobs:
             target: aarch64-apple-darwin
             short: darwin-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
       - uses: actions-rs/toolchain@v1
