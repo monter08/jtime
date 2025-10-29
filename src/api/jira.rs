@@ -2,6 +2,7 @@ use crate::models::{DateRange, Task, WorkLog, WorkLogList};
 use anyhow::Result;
 use chrono::{NaiveDate, TimeZone, Utc};
 use reqwest::blocking::Client;
+use serde::Serialize;
 use serde_json::Value;
 
 pub struct Jira {
@@ -9,6 +10,15 @@ pub struct Jira {
     url: String,
     user_id: Option<String>,
     token: String,
+}
+
+#[derive(Serialize)]
+pub struct WorklogBody {
+    started: String,
+    #[serde(rename = "timeSpentSeconds")]
+    time_spent_seconds: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    comment: Option<String>,
 }
 
 impl Jira {
@@ -50,12 +60,20 @@ impl Jira {
         }
     }
 
-    pub fn log_worktime(&self, task: &str, time_spent: u64, date: &NaiveDate) -> Result<bool> {
-        let json_body = serde_json::json!({
-            "started": format!("{}T08:00:00.000+0000", date.format("%Y-%m-%d")),
-            "timeSpentSeconds": time_spent
-        });
+    pub fn log_worktime(
+        &self,
+        task: &str,
+        time_spent: u64,
+        date: &NaiveDate,
+        comment: Option<String>,
+    ) -> Result<bool> {
+        let worklog_body = WorklogBody {
+            started: format!("{}T08:00:00.000+0000", date.format("%Y-%m-%d")),
+            time_spent_seconds: time_spent,
+            comment,
+        };
 
+        let json_body = serde_json::json!(worklog_body);
         let url = self.build_url(format!("/api/2/issue/{}/worklog", task).as_str());
 
         let response = self

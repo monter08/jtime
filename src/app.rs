@@ -25,8 +25,9 @@ impl App {
                 task,
                 time,
                 day,
+                comment,
                 yes,
-            } => commands::log::execute(&self.api, &self.nager, task, time, day, yes)?,
+            } => commands::log::execute(&self.api, &self.nager, task, time, day, comment, yes)?,
             Commands::Month { cache, month } => {
                 commands::month::execute(&self.config, &self.api, &self.nager, cache, month)?
             }

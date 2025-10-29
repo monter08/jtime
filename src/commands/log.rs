@@ -11,6 +11,7 @@ pub fn execute(
     cli_task: &Option<String>,
     time: &str,
     cli_day: &Option<String>,
+    cli_comment: &Option<String>,
     yes: &bool,
 ) -> Result<()> {
     let task = match cli_task {
@@ -81,6 +82,22 @@ pub fn execute(
         );
     }
 
+    let comment = match cli_comment.clone() {
+        Some(c) => Some(c),
+        None => {
+            if task.contains("TD-") {
+                Some(
+                    Input::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Please enter comment for TD task (e.g., retro):")
+                        .default("review, planning".to_string())
+                        .interact_text()?,
+                )
+            } else {
+                None
+            }
+        }
+    };
+
     if !*yes
         && !Confirm::with_theme(&ColorfulTheme::default())
             .with_prompt("Are you sure?")
@@ -94,10 +111,11 @@ pub fn execute(
     }
 
     for date in dates {
-        api.log_worktime(task, time_spent, &date).context(format!(
-            "Failed to log time for {}",
-            date.format("%Y-%m-%d")
-        ))?;
+        api.log_worktime(task, time_spent, &date, comment.clone())
+            .context(format!(
+                "Failed to log time for {}",
+                date.format("%Y-%m-%d")
+            ))?;
     }
 
     println!(

@@ -33,6 +33,9 @@ pub enum Commands {
         #[clap(default_value = "8h")]
         time: String,
 
+        /// Comment for worklog (e.g. retro)
+        comment: Option<String>,
+
         /// Skip confirmation
         #[clap(long, default_value_t = false)]
         yes: bool,
