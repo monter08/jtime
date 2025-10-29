@@ -27,7 +27,26 @@ impl App {
                 day,
                 comment,
                 yes,
-            } => commands::log::execute(&self.api, &self.nager, task, time, day, comment, yes)?,
+                option_time,
+                option_day,
+                option_comment,
+            } => {
+                let time = if !option_time.is_empty() {
+                    option_time
+                } else {
+                    time
+                };
+                let day = match option_day {
+                    None => day,
+                    Some(v) => &Some(v.to_string()),
+                };
+                let comment = match option_comment {
+                    None => comment,
+                    Some(v) => &Some(v.to_string()),
+                };
+
+                commands::log::execute(&self.api, &self.nager, task, time, day, comment, yes)?
+            }
             Commands::Month { cache, month } => {
                 commands::month::execute(&self.config, &self.api, &self.nager, cache, month)?
             }
