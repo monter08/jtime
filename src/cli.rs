@@ -33,9 +33,24 @@ pub enum Commands {
         #[clap(default_value = "8h")]
         time: String,
 
+        /// Comment for worklog (e.g. retro)
+        comment: Option<String>,
+
         /// Skip confirmation
         #[clap(long, default_value_t = false)]
         yes: bool,
+
+        /// Task but can be provided as option
+        #[arg(short = 'd', long = "day", value_name = "DAY")]
+        option_day: Option<String>,
+
+        /// Task but can be provided as option
+        #[arg(short = 't', long = "time", value_name = "TIME")]
+        option_time: String,
+
+        /// Comment but can be provided as option
+        #[arg(short = 'c', long = "comment", value_name = "COMMENT")]
+        option_comment: Option<String>,
     },
 
     /// (Alias: m)
