@@ -31,10 +31,9 @@ impl App {
                 option_day,
                 option_comment,
             } => {
-                let time = if !option_time.is_empty() {
-                    option_time
-                } else {
-                    time
+                let time = match option_time {
+                    None => time,
+                    Some(v) => v,
                 };
                 let day = match option_day {
                     None => day,

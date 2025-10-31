@@ -46,7 +46,7 @@ pub enum Commands {
 
         /// Task but can be provided as option
         #[arg(short = 't', long = "time", value_name = "TIME")]
-        option_time: String,
+        option_time: Option<String>,
 
         /// Comment but can be provided as option
         #[arg(short = 'c', long = "comment", value_name = "COMMENT")]
