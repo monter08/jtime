@@ -150,7 +150,7 @@ fn check_weekends(dates: &mut Vec<NaiveDate>) -> Result<()> {
                     .green()
             ))
             .default(0)
-            .items(&["Skip weekend days", "Keep weekend days", "Cancel operation"])
+            .items(["Skip weekend days", "Keep weekend days", "Cancel operation"])
             .interact()?;
 
         match selection {
@@ -210,7 +210,7 @@ fn check_holidays(nager: &Nager, dates: &mut Vec<NaiveDate>) -> Result<()> {
                     .green()
             ))
             .default(0)
-            .items(&["Skip holiday days", "Keep holiday days", "Cancel operation"])
+            .items(["Skip holiday days", "Keep holiday days", "Cancel operation"])
             .interact()?;
 
         match selection {
