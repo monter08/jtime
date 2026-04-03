@@ -1,5 +1,6 @@
 use super::Calendar;
 use crate::api::nager::HolidayMap;
+use crate::config::Config;
 use crate::models::{DateRange, Task, WorkLogList, WorkLogListExt};
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
@@ -10,7 +11,7 @@ pub trait Render {
     fn render(
         range: DateRange,
         tasks: WorkLogList,
-        show_weekends: bool,
+        config: &Config,
         holiday_map: Option<HolidayMap>,
     ) -> Result<String>;
     fn works_on(tasks: Vec<Task>) -> String;
@@ -18,13 +19,13 @@ pub trait Render {
 
 const WEEKDAYS: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-fn parse_time_to_hours(time_spent: &str) -> f32 {
+fn parse_time_to_hours(time_spent: &str, work_hours_per_day: f32) -> f32 {
     if time_spent.ends_with('d') {
         time_spent
             .trim_end_matches('d')
             .parse::<f32>()
             .unwrap_or(0.0)
-            * 8.0
+            * work_hours_per_day
     } else if time_spent.ends_with('h') {
         time_spent
             .trim_end_matches('h')
@@ -95,6 +96,8 @@ fn format_hours_info(
     tasks: &WorkLogList,
     total_hours: f32,
     holiday: &Option<String>,
+    work_hours_per_day: f32,
+    show_remaining_per_day: bool,
 ) -> String {
     let today = chrono::Local::now().naive_local().date();
     let is_past_or_today = day <= today;
@@ -102,21 +105,30 @@ fn format_hours_info(
     if !tasks.is_empty() {
         let total_text = format!("total: {}h", total_hours).on_bright_black().white();
 
-        if total_hours > 8.0 {
-            let overflow = total_hours - 8.0;
+        if total_hours > work_hours_per_day {
+            let overflow = total_hours - work_hours_per_day;
             let overflow_text = format!("overtime: +{}h", overflow).on_purple().white();
             format!("---\n{}\n{}", total_text, overflow_text)
-        } else if total_hours < 8.0 {
-            let time_left = 8.0 - total_hours;
-            let time_left_text = format!("remaining: -{}h", time_left).on_red().white();
-            format!("---\n{}\n{}", total_text, time_left_text)
+        } else if total_hours < work_hours_per_day {
+            if show_remaining_per_day {
+                let time_left = work_hours_per_day - total_hours;
+                let time_left_text = format!("remaining: -{}h", time_left).on_red().white();
+                format!("---\n{}\n{}", total_text, time_left_text)
+            } else {
+                format!("---\n{}", total_text)
+            }
         } else {
             format!("---\n{}", total_text)
         }
     } else if is_past_or_today && holiday.is_none() {
         let is_weekend = day.weekday().number_from_monday() >= 6;
-        if !is_weekend {
-            format!("---\n{}", "remaining: -8h".on_red().white())
+        if !is_weekend && show_remaining_per_day {
+            format!(
+                "---\n{}",
+                format!("remaining: -{}h", work_hours_per_day)
+                    .on_red()
+                    .white()
+            )
         } else {
             String::new()
         }
@@ -129,9 +141,10 @@ impl Render for Calendar {
     fn render(
         range: DateRange,
         tasks: WorkLogList,
-        show_weekends: bool,
+        config: &Config,
         holiday_map: Option<HolidayMap>,
     ) -> Result<String> {
+        let show_weekends = config.show_weekends;
         let weekday_limit = if show_weekends { WEEKDAYS.len() } else { 5 };
         let holiday_map = holiday_map.unwrap_or_default();
         let table = range
@@ -146,6 +159,8 @@ impl Render for Calendar {
                             holiday_map
                                 .get(&day.format("%Y-%m-%d").to_string())
                                 .cloned(),
+                            config.work_hours_per_day,
+                            config.show_remaining_per_day,
                         )
                     })
                     .collect()
@@ -175,15 +190,28 @@ impl Render for Calendar {
     }
 }
 
-fn render_cell(day: NaiveDate, tasks: &WorkLogList, holiday: Option<String>) -> CellStruct {
+fn render_cell(
+    day: NaiveDate,
+    tasks: &WorkLogList,
+    holiday: Option<String>,
+    work_hours_per_day: f32,
+    show_remaining_per_day: bool,
+) -> CellStruct {
     let total_hours: f32 = tasks
         .iter()
-        .map(|t| parse_time_to_hours(&t.time_spent))
+        .map(|t| parse_time_to_hours(&t.time_spent, work_hours_per_day))
         .sum();
 
     let day_num = style_day_number(day, tasks, &holiday);
     let task_text = format_tasks(tasks, &holiday);
-    let hours_info = format_hours_info(day, tasks, total_hours, &holiday);
+    let hours_info = format_hours_info(
+        day,
+        tasks,
+        total_hours,
+        &holiday,
+        work_hours_per_day,
+        show_remaining_per_day,
+    );
 
     let combined_text = if hours_info.is_empty() {
         task_text

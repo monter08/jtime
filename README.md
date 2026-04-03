@@ -112,6 +112,12 @@ jtime config --token your-api-token
 
 # Configure weekend display
 jtime config --show-weekends true
+
+# Set work hours per day (used for remaining/overtime calculations)
+jtime config --work-hours-per-day 7.5
+
+# Toggle remaining time display per day in calendar
+jtime config --show-remaining-per-day false
 ```
 
 ## Configuration
@@ -124,9 +130,21 @@ Example configuration:
 {
   "jira_url": "https://your-company.atlassian.net",
   "jira_token": "your-jira-api-token",
-  "show_weekends": false
+  "show_weekends": false,
+  "work_hours_per_day": 8.0,
+  "show_remaining_per_day": true
 }
 ```
+
+### Config options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `jira_url` | string | — | Your Jira instance URL |
+| `jira_token` | string | — | Personal Access Token for Jira |
+| `show_weekends` | bool | `false` | Show Saturday and Sunday in calendar |
+| `work_hours_per_day` | number | `8.0` | Number of working hours per day used to calculate remaining/overtime |
+| `show_remaining_per_day` | bool | `true` | Show `remaining: -Xh` lines in the calendar for days that are not fully logged |
 
 ## License
 

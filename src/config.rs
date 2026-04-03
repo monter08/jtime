@@ -12,6 +12,18 @@ pub struct Config {
     pub nager_country_code: Option<String>,
     #[serde(default)]
     pub show_weekends: bool,
+    #[serde(default = "default_work_hours_per_day")]
+    pub work_hours_per_day: f32,
+    #[serde(default = "default_show_remaining_per_day")]
+    pub show_remaining_per_day: bool,
+}
+
+fn default_work_hours_per_day() -> f32 {
+    8.0
+}
+
+fn default_show_remaining_per_day() -> bool {
+    true
 }
 
 impl Config {
@@ -63,6 +75,8 @@ impl Config {
             nager_url: None,
             nager_country_code: None,
             show_weekends: false,
+            work_hours_per_day: default_work_hours_per_day(),
+            show_remaining_per_day: default_show_remaining_per_day(),
         })
     }
 }

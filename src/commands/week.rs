@@ -41,7 +41,7 @@ pub fn execute(
         Calendar::render(
             range,
             tasks,
-            config.show_weekends,
+            config,
             Some(nager.get_all_holidays_map(Utc::now().year().to_string())?)
         )?,
         Calendar::works_on(actually_works)
