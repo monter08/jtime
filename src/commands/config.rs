@@ -76,9 +76,9 @@ pub fn execute(
         config.show_remaining_per_day.to_string().green()
     );
     println!(
-        "{} {}",
+        "{}\n{}",
         "You can change the values:".yellow(),
-        "jtime config --url https://jira.com --token 123 --show-weekends true".blue()
+        "jtime config --url https://jira.com --token 123 --show-weekends true --work-hours-per-day 8.0 --show-remaining-per-day true".blue()
     );
 
     Ok(())
