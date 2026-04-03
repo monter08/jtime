@@ -9,6 +9,8 @@ pub fn execute(
     nager_url: &Option<Option<String>>,
     nager_country_code: &Option<Option<String>>,
     show_weekends: &Option<bool>,
+    work_hours_per_day: &Option<f32>,
+    show_remaining_per_day: &Option<bool>,
 ) -> Result<()> {
     if let Some(raw_url) = url {
         let clean_url = raw_url
@@ -30,12 +32,20 @@ pub fn execute(
     if let Some(show_weekends) = show_weekends {
         config.show_weekends = *show_weekends;
     }
+    if let Some(work_hours_per_day) = work_hours_per_day {
+        config.work_hours_per_day = *work_hours_per_day;
+    }
+    if let Some(show_remaining_per_day) = show_remaining_per_day {
+        config.show_remaining_per_day = *show_remaining_per_day;
+    }
 
     if url.is_some()
         || token.is_some()
         || nager_url.is_some()
         || nager_country_code.is_some()
         || show_weekends.is_some()
+        || work_hours_per_day.is_some()
+        || show_remaining_per_day.is_some()
     {
         config.save()?;
         println!("{}", "Configuration updated successfully! :)".green());
@@ -56,6 +66,14 @@ pub fn execute(
     println!(
         "Show weekends (show_weekends): {}",
         config.show_weekends.to_string().green()
+    );
+    println!(
+        "Work hours per day (work_hours_per_day): {}",
+        config.work_hours_per_day.to_string().green()
+    );
+    println!(
+        "Show remaining per day (show_remaining_per_day): {}",
+        config.show_remaining_per_day.to_string().green()
     );
     println!(
         "{} {}",

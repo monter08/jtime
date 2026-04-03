@@ -59,6 +59,8 @@ impl App {
                 nager_url,
                 nager_country_code,
                 show_weekends,
+                work_hours_per_day,
+                show_remaining_per_day,
             } => commands::config::execute(
                 self.config.clone(),
                 url,
@@ -66,6 +68,8 @@ impl App {
                 nager_url,
                 nager_country_code,
                 show_weekends,
+                work_hours_per_day,
+                show_remaining_per_day,
             )?,
             Commands::Update => commands::update::execute()?,
         }

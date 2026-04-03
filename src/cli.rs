@@ -108,6 +108,14 @@ pub enum Commands {
         /// Show weekends
         #[clap(long)]
         show_weekends: Option<bool>,
+
+        /// Work hours per day (default: 8.0)
+        #[clap(long)]
+        work_hours_per_day: Option<f32>,
+
+        /// Show remaining time per day in calendar (default: true)
+        #[clap(long)]
+        show_remaining_per_day: Option<bool>,
     },
 
     /// (Alias: u)
