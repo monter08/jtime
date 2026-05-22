@@ -63,13 +63,15 @@ impl App {
                 show_remaining_per_day,
             } => commands::config::execute(
                 self.config.clone(),
-                url,
-                token,
-                nager_url,
-                nager_country_code,
-                show_weekends,
-                work_hours_per_day,
-                show_remaining_per_day,
+                commands::config::ConfigArgs {
+                    url,
+                    token,
+                    nager_url,
+                    nager_country_code,
+                    show_weekends,
+                    work_hours_per_day,
+                    show_remaining_per_day,
+                },
             )?,
             Commands::Update => commands::update::execute()?,
         }
