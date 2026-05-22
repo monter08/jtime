@@ -20,26 +20,15 @@ pub trait Render {
 const WEEKDAYS: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 fn parse_time_to_hours(time_spent: &str, work_hours_per_day: f32) -> f32 {
-    if time_spent.ends_with('d') {
-        time_spent
-            .trim_end_matches('d')
-            .parse::<f32>()
-            .unwrap_or(0.0)
-            * work_hours_per_day
-    } else if time_spent.ends_with('h') {
-        time_spent
-            .trim_end_matches('h')
-            .parse::<f32>()
-            .unwrap_or(0.0)
-    } else if time_spent.ends_with('m') {
-        time_spent
-            .trim_end_matches('m')
-            .parse::<f32>()
-            .unwrap_or(0.0)
-            / 60.0
-    } else {
-        0.0
-    }
+    time_spent.split_whitespace().fold(0.0f32, |acc, token| {
+        let val = token[..token.len() - 1].parse::<f32>().unwrap_or(0.0);
+        acc + match token.chars().last() {
+            Some('d') => val * work_hours_per_day,
+            Some('h') => val,
+            Some('m') => val / 60.0,
+            _ => 0.0,
+        }
+    })
 }
 
 fn style_day_number(day: NaiveDate, tasks: &WorkLogList, holiday: &Option<String>) -> String {
