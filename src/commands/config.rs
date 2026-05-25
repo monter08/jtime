@@ -2,16 +2,26 @@ use crate::config::Config;
 use anyhow::Result;
 use colored::Colorize;
 
-pub fn execute(
-    mut config: Config,
-    url: &Option<String>,
-    token: &Option<String>,
-    nager_url: &Option<Option<String>>,
-    nager_country_code: &Option<Option<String>>,
-    show_weekends: &Option<bool>,
-    work_hours_per_day: &Option<f32>,
-    show_remaining_per_day: &Option<bool>,
-) -> Result<()> {
+pub struct ConfigArgs<'a> {
+    pub url: &'a Option<String>,
+    pub token: &'a Option<String>,
+    pub nager_url: &'a Option<Option<String>>,
+    pub nager_country_code: &'a Option<Option<String>>,
+    pub show_weekends: &'a Option<bool>,
+    pub work_hours_per_day: &'a Option<f32>,
+    pub show_remaining_per_day: &'a Option<bool>,
+}
+
+pub fn execute(mut config: Config, args: ConfigArgs) -> Result<()> {
+    let ConfigArgs {
+        url,
+        token,
+        nager_url,
+        nager_country_code,
+        show_weekends,
+        work_hours_per_day,
+        show_remaining_per_day,
+    } = args;
     if let Some(raw_url) = url {
         let clean_url = raw_url
             .trim_end_matches('/')
