@@ -76,8 +76,8 @@ mod tests {
         assert_eq!(
             result,
             DateRange {
-                from: NaiveDate::from_ymd_opt(2025, 02, 24).unwrap(),
-                to: NaiveDate::from_ymd_opt(2025, 04, 06).unwrap(),
+                from: NaiveDate::from_ymd_opt(2025, 2, 24).unwrap(),
+                to: NaiveDate::from_ymd_opt(2025, 4, 6).unwrap(),
             }
         );
     }
@@ -89,8 +89,8 @@ mod tests {
         assert_eq!(
             result,
             DateRange {
-                from: NaiveDate::from_ymd_opt(2025, 03, 31).unwrap(),
-                to: NaiveDate::from_ymd_opt(2025, 05, 4).unwrap(),
+                from: NaiveDate::from_ymd_opt(2025, 3, 31).unwrap(),
+                to: NaiveDate::from_ymd_opt(2025, 5, 4).unwrap(),
             }
         );
     }

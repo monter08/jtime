@@ -64,7 +64,7 @@ impl Config {
         std::io::stdin().read_line(&mut jira_url)?;
         jira_url = jira_url.trim().to_string();
 
-        println!("Enter Jira token (Get from: {}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens):", &jira_url);
+        println!("Enter Jira token (Get from: {}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens):", jira_url);
         let mut jira_token = String::new();
         std::io::stdin().read_line(&mut jira_token)?;
         jira_token = jira_token.trim().to_string();

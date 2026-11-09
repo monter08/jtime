@@ -9,14 +9,16 @@ pub fn execute(
     api: &Jira,
     nager: &Nager,
     cli_task: &Option<String>,
-    time: &str,
+    cli_time: &Option<String>,
     cli_day: &Option<String>,
     cli_comment: &Option<String>,
     yes: &bool,
-) -> Result<()> {
+) -> Result<bool> {
+    let mut ask_time = false;
     let task = match cli_task {
         Some(t) => t,
         None => {
+            ask_time = true;
             let actually_works = api.actually_works()?;
             if actually_works.is_empty() {
                 anyhow::bail!("No tasks found. Please set up your tasks first.");
@@ -35,7 +37,7 @@ pub fn execute(
                 .interact()?;
             if day == days.len() - 1 {
                 println!("Aborted.");
-                return Ok(());
+                return Ok(false);
             }
             &actually_works[day].id.clone()
         }
@@ -49,6 +51,16 @@ pub fn execute(
             .interact_text()?,
     };
 
+    let time = match cli_time.clone() {
+        Some(t) => t,
+        None if ask_time => Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Please enter the time to log (e.g., 1h30m):")
+            .default("8h".to_string())
+            .interact_text()?,
+        None => "8h".to_string(),
+    };
+    let time = time.as_str();
+
     let time_spent = parse_time(time)?;
     let mut dates = parse_date(day.as_str(), true)?;
 
@@ -56,20 +68,20 @@ pub fn execute(
         Ok(_) => {}
         Err(err) => {
             println!("{}", err);
-            return Ok(());
+            return Ok(false);
         }
     };
 
     if dates.is_empty() {
         println!("Nothing to log");
-        return Ok(());
+        return Ok(false);
     }
 
     match check_holidays(nager, &mut dates) {
         Ok(_) => (),
         Err(err) => {
             println!("{}", err);
-            return Ok(());
+            return Ok(false);
         }
     };
 
@@ -107,7 +119,7 @@ pub fn execute(
             .interact()?
     {
         println!("Aborted.");
-        return Ok(());
+        return Ok(false);
     }
 
     for date in dates {
@@ -123,7 +135,7 @@ pub fn execute(
         "Logged time successfully! Time for coffee! ☕".green()
     );
 
-    Ok(())
+    Ok(true)
 }
 
 fn check_weekends(dates: &mut Vec<NaiveDate>) -> Result<()> {
