@@ -91,7 +91,26 @@ impl Jira {
     }
 
     pub fn fetch_worklogs(&self, range: DateRange) -> Result<WorkLogList> {
-        let user_id = self.get_user_id()?;
+        self.fetch_worklogs_for(range, self.get_user_id()?)
+    }
+
+    /// Resolve a Jira username (e.g. jan.kowalski) to the user key used by worklog search.
+    pub fn get_user_key(&self, username: &str) -> Result<String> {
+        let mut url = reqwest::Url::parse(&self.build_url("/api/2/user"))?;
+        url.query_pairs_mut().append_pair("username", username);
+        let response = self.client.get(url).bearer_auth(&self.token).send()?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("User '{}' not found: {}", username, response.status());
+        }
+        let user: Value = response.json()?;
+        user["key"]
+            .as_str()
+            .map(|s| s.to_string())
+            .ok_or_else(|| anyhow::anyhow!("User key not found in response"))
+    }
+
+    pub fn fetch_worklogs_for(&self, range: DateRange, user_id: String) -> Result<WorkLogList> {
         let url = self.build_url("/actonic-tb/1.0/api/worklogs/search-issues");
 
         let request_body = serde_json::json!({

@@ -33,7 +33,7 @@ impl App {
             } => {
                 let time = match option_time {
                     None => time,
-                    Some(v) => v,
+                    Some(v) => &Some(v.to_string()),
                 };
                 let day = match option_day {
                     None => day,
@@ -44,10 +44,17 @@ impl App {
                     Some(v) => &Some(v.to_string()),
                 };
 
-                commands::log::execute(&self.api, &self.nager, task, time, day, comment, yes)?
+                let logged =
+                    commands::log::execute(&self.api, &self.nager, task, time, day, comment, yes)?;
+                if logged {
+                    commands::month::execute(&self.config, &self.api, &self.nager, &false, &None)?;
+                }
             }
             Commands::Month { cache, month } => {
                 commands::month::execute(&self.config, &self.api, &self.nager, cache, month)?
+            }
+            Commands::Peek { user, month } => {
+                commands::peek::execute(&self.config, &self.api, &self.nager, user, month)?
             }
 
             Commands::Week { cache, prev } => {

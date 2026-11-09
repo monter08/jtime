@@ -30,8 +30,8 @@ pub enum Commands {
         day: Option<String>,
 
         /// Time spent (e.g. 1h30m)
-        #[clap(default_value = "8h")]
-        time: String,
+        /// Default is 8h (asked interactively when the task is picked from the list)
+        time: Option<String>,
 
         /// Comment for worklog (e.g. retro)
         comment: Option<String>,
@@ -66,6 +66,20 @@ pub enum Commands {
         /// Month number (1-12)
         /// Default is current month
         /// Example: 2
+        #[clap(short, long)]
+        month: Option<u32>,
+    },
+
+    /// (Alias: p)
+    /// Peek at another user's monthly time logs
+    /// Example: jtime peek jan.kowalski --month 2
+    #[clap(alias = "p")]
+    Peek {
+        /// Jira username (eg. jan.kowalski)
+        user: String,
+
+        /// Month number (1-12)
+        /// Default is current month
         #[clap(short, long)]
         month: Option<u32>,
     },
